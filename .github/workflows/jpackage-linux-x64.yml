@@ -2,8 +2,6 @@ name: Linux/x64 executable
 
 on:
   push:
-    branches:
-      - master
     tags:
       - v0.*
       - v1.*
@@ -23,7 +21,6 @@ jobs:
         uses: ncipollo/release-action@v1.6.1
         id: create_release
         with:
-          tag: ${{ github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
           allowUpdates: true
           replaceArtifacts: false
