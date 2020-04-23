@@ -19,23 +19,11 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew jpackageZip
       - name: Create Release
-        uses: actions/create-release@latest
+        uses: ncipollo/release-action@v1
         id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}-windows
-          release_name: Release ${{ github.ref }} Windows
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          replaceArtifacts: false
           body: Fully automated release
-          draft: false
-          prerelease: false
-      - name: Upload Release Asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: ./build/distributions/openrndr-application.zip
-          asset_name: openrndr-application.zip
-          asset_content_type: application/zip
+          artifacts: "./build/distributions/openrndr-application-windows.zip"

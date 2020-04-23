@@ -238,7 +238,7 @@ tasks {
 }
 
 tasks.register<Zip>("jpackageZip") {
-    archiveFileName.set("openrndr-application.zip")
+    archiveFileName.set("openrndr-application-$openrndrOs.zip")
     from("$buildDir/jpackage") {
         include("**/*")
     }
