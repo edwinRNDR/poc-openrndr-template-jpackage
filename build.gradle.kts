@@ -1,3 +1,4 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.gradle.nativeplatform.platform.internal.DefaultNativePlatform
@@ -30,7 +31,7 @@ val orxFeatures = setOf(
 //  "orx-no-clear",
     "orx-noise",
 //  "orx-obj-loader",
-    "orx-olive",
+//    "orx-olive",
 //  "orx-osc",
 //  "orx-palette",
 //  "orx-poisson-fill",
@@ -61,7 +62,7 @@ val orxVersion = if (orxUseSnapshot) "0.4.0-SNAPSHOT" else "0.3.50"
 val supportedPlatforms = setOf("windows", "macos", "linux-x64", "linux-arm64")
 
 val openrndrOs = if (project.hasProperty("targetPlatform")) {
-    val platform : String = project.property("targetPlatform") as String
+    val platform: String = project.property("targetPlatform") as String
     if (platform !in supportedPlatforms) {
         throw IllegalArgumentException("target platform not supported: $platform")
     } else {
@@ -70,10 +71,10 @@ val openrndrOs = if (project.hasProperty("targetPlatform")) {
 } else when (OperatingSystem.current()) {
     OperatingSystem.WINDOWS -> "windows"
     OperatingSystem.MAC_OS -> "macos"
-    OperatingSystem.LINUX -> when(val h = DefaultNativePlatform("current").architecture.name) {
+    OperatingSystem.LINUX -> when (val h = DefaultNativePlatform("current").architecture.name) {
         "x86-64" -> "linux-x64"
         "aarch64" -> "linux-arm64"
-        else ->throw IllegalArgumentException("architecture not supported: $h")
+        else -> throw IllegalArgumentException("architecture not supported: $h")
     }
     else -> throw IllegalArgumentException("os not supported")
 }
@@ -92,7 +93,9 @@ val kotlinVersion = "1.3.71"
 
 plugins {
     java
-    kotlin("jvm") version("1.3.71")
+    kotlin("jvm") version ("1.3.71")
+    id("com.github.johnrengelman.shadow") version ("5.2.0")
+    id("org.beryx.runtime") version ("1.8.1")
 }
 
 repositories {
@@ -104,7 +107,7 @@ repositories {
 }
 
 fun DependencyHandler.orx(module: String): Any {
-        return "org.openrndr.extra:$module:$orxVersion"
+    return "org.openrndr.extra:$module:$orxVersion"
 }
 
 fun DependencyHandler.openrndr(module: String): Any {
@@ -137,15 +140,15 @@ dependencies {
     implementation(openrndr("extensions"))
     implementation(openrndr("filter"))
 
-    implementation("org.jetbrains.kotlinx", "kotlinx-coroutines-core","1.3.5")
-    implementation("io.github.microutils", "kotlin-logging","1.7.9")
+    implementation("org.jetbrains.kotlinx", "kotlinx-coroutines-core", "1.3.5")
+    implementation("io.github.microutils", "kotlin-logging", "1.7.9")
 
-    when(applicationLogging) {
+    when (applicationLogging) {
         Logging.NONE -> {
-            runtimeOnly("org.slf4j","slf4j-nop","1.7.30")
+            runtimeOnly("org.slf4j", "slf4j-nop", "1.7.30")
         }
         Logging.SIMPLE -> {
-            runtimeOnly("org.slf4j","slf4j-simple","1.7.30")
+            runtimeOnly("org.slf4j", "slf4j-simple", "1.7.30")
         }
         Logging.FULL -> {
             runtimeOnly("org.apache.logging.log4j", "log4j-slf4j-impl", "2.13.1")
@@ -185,29 +188,66 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-tasks.withType<Jar> {
-    isZip64 = true
-    manifest {
-        attributes["Main-Class"] = applicationMainClass
-    }
-    doFirst {
-        from(configurations.compileClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    }
+//tasks.withType<Jar> {
+//    isZip64 = true
+//    manifest {
+//        attributes["Main-Class"] = applicationMainClass
+//    }
+//    doFirst {
+//        from(configurations.compileClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+//        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+//    }
+//
+//    exclude(listOf("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA", "**/module-info*"))
+//    archiveFileName.set("application-$openrndrOs.jar")
+//}
 
-    exclude(listOf("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA", "**/module-info*"))
-    archiveFileName.set("application-$openrndrOs.jar")
+//tasks.create("zipDistribution", Zip::class.java) {
+//    archiveFileName.set("application-$openrndrOs.zip")
+//    from("./") {
+//        include("data/**")
+//    }
+//    from("$buildDir/libs/application-$openrndrOs.jar")
+//}.dependsOn(tasks.jar)
+
+project.setProperty("mainClassName", applicationMainClass)
+tasks {
+    named<ShadowJar>("shadowJar") {
+        manifest {
+            attributes["Main-Class"] = applicationMainClass
+        }
+        minimize {
+            exclude(dependency("org.openrndr:openrndr-gl3:.*"))
+            exclude(dependency("org.jetbrains.kotlin:kotlin-reflect:.*"))
+        }
+    }
+    named<org.beryx.runtime.JPackageTask>("jpackage") {
+        doLast {
+            copy {
+                from("data") {
+                    include("**/*")
+                }
+                into("build/jpackage/openrndr-application/data")
+            }
+        }
+    }
 }
+runtime {
 
-tasks.create("zipDistribution", Zip::class.java) {
-    archiveFileName.set("application-$openrndrOs.zip")
-    from("./") {
-        include("data/**")
+    jpackage {
+        imageName = "openrndr-application"
+        skipInstaller = true
+
     }
-    from("$buildDir/libs/application-$openrndrOs.jar")
-}.dependsOn(tasks.jar)
 
-tasks.create("run", JavaExec::class.java) {
-    main = applicationMainClass
-    classpath = sourceSets.main.get().runtimeClasspath
-}.dependsOn(tasks.build)
+    options.empty()
+    options.add("--strip-debug")
+    options.add("--compress")
+    options.add("1")
+    options.add("--no-header-files")
+    options.add("--no-man-pages")
+    modules.empty()
+    modules.add("jdk.unsupported")
+
+
+}
