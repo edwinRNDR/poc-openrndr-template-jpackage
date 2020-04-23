@@ -2,6 +2,8 @@ name: Windows executable
 
 on:
   push:
+    branches:
+      - master
     tags:
       - v.*
 
@@ -17,7 +19,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew jpackageZip
       - name: Create Release
-        uses: ncipollo/release-action@v1
+        uses: ncipollo/release-action@v1.6.1
         id: create_release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
