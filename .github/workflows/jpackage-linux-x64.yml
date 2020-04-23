@@ -12,7 +12,7 @@ jobs:
         with:
           java-version: 14
       - name: Build with Gradle
-        run: ./gradlew jpackage
+        run: ./gradlew jpackageZip
       - name: Create Release
         uses: actions/create-release@latest
         id: create_release
