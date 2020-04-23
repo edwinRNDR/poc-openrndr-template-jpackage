@@ -2,8 +2,6 @@ name: Windows executable
 
 on:
   push:
-    branches:
-      - master
     tags:
       - v.*
 
@@ -23,6 +21,7 @@ jobs:
         id: create_release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
           allowUpdates: true
           replaceArtifacts: false
           body: Fully automated release
