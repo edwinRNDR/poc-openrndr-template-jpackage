@@ -223,17 +223,20 @@ tasks {
     }
     named<org.beryx.runtime.JPackageTask>("jpackage") {
         doLast {
-            copy {
-                from("data") {
-                    include("**/*")
+            when (OperatingSystem.current()) {
+                OperatingSystem.WINDOWS, OperatingSystem.LINUX -> {
+                    copy {
+                        from("data") {
+                            include("**/*")
+                        }
+                        into("build/jpackage/openrndr-application/data")
+                    }
                 }
-                into("build/jpackage/openrndr-application/data")
             }
-
         }
     }
-
 }
+
 tasks.register<Zip>("jpackageZip") {
     archiveFileName.set("openrndr-application.zip")
     from("$buildDir/jpackage") {

@@ -1,4 +1,4 @@
-name: Linux/x64 executable
+name: Windows executable
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 14
@@ -24,8 +24,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}-linux_x64
-          release_name: Release ${{ github.ref }} Linux x64
+          tag_name: ${{ github.ref }}-windows
+          release_name: Release ${{ github.ref }} Windows
           body: Fully automated release
           draft: false
           prerelease: false
