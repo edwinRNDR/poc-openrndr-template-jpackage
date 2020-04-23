@@ -229,17 +229,26 @@ tasks {
                 }
                 into("build/jpackage/openrndr-application/data")
             }
+
         }
     }
-}
-runtime {
 
+}
+tasks.register<Zip>("jpackageZip") {
+    archiveFileName.set("openrndr-application.zip")
+    from("$buildDir/jpackage") {
+        include("**/*")
+    }
+}
+    
+tasks.findByName("jpackageZip")?.dependsOn("jpackage")
+    
+
+runtime {
     jpackage {
         imageName = "openrndr-application"
         skipInstaller = true
-
     }
-
     options.empty()
     options.add("--strip-debug")
     options.add("--compress")
@@ -248,6 +257,4 @@ runtime {
     options.add("--no-man-pages")
     modules.empty()
     modules.add("jdk.unsupported")
-
-
 }
