@@ -179,36 +179,12 @@ dependencies {
     //</editor-fold>
 }
 
-// --------------------------------------------------------------------------------------------------------------------
-
 configure<JavaPluginConvention> {
     sourceCompatibility = JavaVersion.VERSION_1_8
 }
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
-
-//tasks.withType<Jar> {
-//    isZip64 = true
-//    manifest {
-//        attributes["Main-Class"] = applicationMainClass
-//    }
-//    doFirst {
-//        from(configurations.compileClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-//        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-//    }
-//
-//    exclude(listOf("META-INF/*.RSA", "META-INF/*.SF", "META-INF/*.DSA", "**/module-info*"))
-//    archiveFileName.set("application-$openrndrOs.jar")
-//}
-
-//tasks.create("zipDistribution", Zip::class.java) {
-//    archiveFileName.set("application-$openrndrOs.zip")
-//    from("./") {
-//        include("data/**")
-//    }
-//    from("$buildDir/libs/application-$openrndrOs.jar")
-//}.dependsOn(tasks.jar)
 
 project.setProperty("mainClassName", applicationMainClass)
 tasks {
@@ -232,6 +208,14 @@ tasks {
                         into("build/jpackage/openrndr-application/data")
                     }
                 }
+                OperatingSystem.MAC_OS -> {
+                    copy {
+                        from("data") {
+                            include("**/*")
+                        }
+                        into("build/jpackage/openrndr-application.app/data")
+                    }
+                }
             }
         }
     }
@@ -243,14 +227,15 @@ tasks.register<Zip>("jpackageZip") {
         include("**/*")
     }
 }
-    
 tasks.findByName("jpackageZip")?.dependsOn("jpackage")
     
-
 runtime {
     jpackage {
         imageName = "openrndr-application"
         skipInstaller = true
+        if (OperatingSystem.current() == OperatingSystem.MAC_OS) {
+            jvmArgs.add("-XstartOnFirstThread")
+        }
     }
     options.empty()
     options.add("--strip-debug")
